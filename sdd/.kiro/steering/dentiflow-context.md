@@ -1,0 +1,239 @@
+﻿---
+inclusion: auto
+name: dentiflow-context
+description: Contexto general del proyecto DentiFlow - Sistema de gestión para consultorio dental
+---
+
+# Contexto del Proyecto: DentiFlow
+
+## Descripción General
+
+**DentiFlow** es una aplicación web para gestión administrativa de un consultorio dental pequeño dirigido por la Dra. Laura, quien trabaja con una asistente.
+
+## Problemas que Resuelve
+
+1. **Inasistencias a Citas**: Aproximadamente el 30% de los pacientes no asisten a sus citas, ocasionando espacios desaprovechados.
+2. **Abandono de Tratamientos**: Pacientes dejan incompletos tratamientos multi-sesión (endodoncia, ortodoncia) cuando mejoran temporalmente.
+3. **Carga Operativa**: La asistente dedica horas diarias enviando recordatorios manuales por WhatsApp.
+
+## Usuarios del Sistema
+
+### Doctora (Dra. Laura)
+- Consulta información de pacientes y tratamientos
+- Revisa reportes y métricas
+- Configura reglas de automatización
+- Administra usuarios
+
+### Asistente
+- Registra pacientes y citas
+- Gestiona tratamientos y sesiones
+- Realiza seguimiento a pacientes
+- Registra intentos de contacto
+- Consulta alertas y tareas pendientes
+
+## Stack Tecnológico
+
+### Frontend
+- **React** con TypeScript
+- **Tailwind CSS** para estilos
+- Diseño responsive (desktop, tablet, móvil)
+
+### Backend y Persistencia
+- **Supabase** (PostgreSQL + Auth + Edge Functions)
+- **Row Level Security (RLS)** para protección de datos
+- Autenticación basada en roles
+
+### Integraciones Externas (Fases posteriores)
+- Google Calendar API (OAuth 2.0)
+- WhatsApp Business Cloud API
+
+## Convenciones de Base de Datos
+
+**IMPORTANTE**: Todos los nombres de tablas, columnas, funciones y objetos de base de datos deben estar en **español**.
+
+### Nomenclatura
+- **Formato**: `snake_case`
+- **Tablas**: Nombres en plural (ej: `pacientes`, `citas`, `tratamientos`)
+- **Columnas**: Descriptivas en español (ej: `nombre_completo`, `fecha_creacion`)
+- **Claves primarias**: `id` (tipo UUID)
+- **Claves foráneas**: `{tabla_singular}_id` (ej: `paciente_id`, `tratamiento_id`)
+
+### Tipos de Datos Estándar
+- **Identificadores**: `UUID` (con `gen_random_uuid()`)
+- **Fechas con hora**: `TIMESTAMPTZ` (con zona horaria)
+- **Fechas sin hora**: `DATE`
+- **Booleanos**: `BOOLEAN`
+- **Textos**: `TEXT` (preferir sobre VARCHAR)
+- **Estados/enums**: `TEXT` con restricción `CHECK` o tipo `ENUM`
+- **Configuraciones flexibles**: `JSONB`
+
+### Campos Obligatorios
+Todas las tablas deben incluir:
+```sql
+created_at TIMESTAMPTZ DEFAULT NOW(),
+updated_at TIMESTAMPTZ DEFAULT NOW()
+```
+
+### Triggers Automáticos
+Implementar trigger para actualizar `updated_at`:
+```sql
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE ON nombre_tabla
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+```
+
+### Políticas RLS
+- Aplicar políticas de seguridad a nivel de fila
+- Los usuarios solo acceden a datos de su consultorio
+- Roles: `doctora`, `asistente`
+
+## Zona Horaria
+
+**Default**: `America/Managua` (Nicaragua)
+
+Siempre usar `TIMESTAMPTZ` para almacenar fechas/horas con zona horaria.
+
+## Diseño de Interfaz
+
+### Paleta de Colores
+- **Principal**: Azul suave / azul turquesa (#3B82F6, #06B6D4)
+- **Secundario**: Blanco (#FFFFFF)
+- **Fondos**: Gris muy claro (#F9FAFB, #F3F4F6)
+- **Estados**:
+  - Confirmado: Verde (#10B981)
+  - Pendiente: Amarillo/Naranja (#F59E0B)
+  - Cancelado: Rojo (#EF4444)
+  - Alerta: Rojo intenso (#DC2626)
+
+### Estilo Visual
+- Moderno, profesional, limpio y minimalista
+- Iconografía sencilla y consistente
+- Tarjetas informativas (cards) para indicadores
+- Tablas limpias y fáciles de consultar
+- Formularios con validación clara
+
+### Idioma
+**Español** en todos los textos, etiquetas, botones, notificaciones y mensajes.
+
+## Restricciones y Alcance
+
+### Dentro del Alcance
+- ✅ Gestión administrativa de pacientes (datos de contacto)
+- ✅ Programación y seguimiento de citas
+- ✅ Control de tratamientos multi-sesión
+- ✅ Alertas y seguimiento de pacientes
+- ✅ Automatización de recordatorios
+- ✅ Reportes e indicadores
+
+### Fuera del Alcance
+- ❌ **NO** expedientes clínicos completos
+- ❌ **NO** diagnósticos médicos
+- ❌ **NO** antecedentes médicos detallados
+- ❌ **NO** prescripciones o recetas
+- ❌ **NO** facturación o pagos
+- ❌ **NO** inventario de medicamentos
+- ❌ **NO** imágenes médicas (radiografías)
+
+**Razón**: DentiFlow es una herramienta **administrativa**, no un sistema de historia clínica electrónica.
+
+## Prioridades de Implementación
+
+### Fase 1: Funcionalidad Principal (MVP)
+1. Autenticación y roles
+2. CRUD de Pacientes
+3. CRUD de Citas
+4. Gestión de Tratamientos multi-sesión
+5. Control de Sesiones
+6. Sistema de Alertas de seguimiento
+
+### Fase 2: Automatización
+- Integración con WhatsApp Business
+- Recordatorios automáticos
+- Confirmación de citas
+
+### Fase 3: Integraciones y Reportes
+- Sincronización con Google Calendar
+- Dashboard con KPIs
+- Reportes avanzados
+- Exportación de datos
+
+## Principios de Desarrollo
+
+### Seguridad
+- Autenticación obligatoria para todas las rutas
+- Autorización basada en roles (RBAC)
+- RLS en todas las tablas sensibles
+- Tokens y credenciales solo en backend
+- Validación de datos en frontend y backend
+
+### Usabilidad
+- La asistente debe poder realizar operaciones en ≤3 clics
+- Feedback claro en todas las acciones
+- Estados de carga visibles
+- Mensajes de error descriptivos
+- Formularios con validación en tiempo real
+
+### Mantenibilidad
+- Componentes reutilizables
+- Separación de concerns (UI / Lógica / Datos)
+- Código documentado
+- Nombres descriptivos en español
+- Funciones pequeñas y cohesivas
+
+### Performance
+- Cargas iniciales < 2 segundos
+- Consultas optimizadas con índices
+- Paginación en listados grandes
+- Lazy loading de componentes
+
+## Datos de Prueba (Seed Data)
+
+Para facilitar el desarrollo, crear datos de prueba representativos:
+
+### Usuarios
+- Dra. Laura (rol: doctora)
+- María González (rol: asistente)
+
+### Pacientes (mínimo 10)
+Ejemplos:
+- Juan Pérez (tratamiento activo)
+- Ana Martínez (tratamiento pendiente seguimiento)
+- Carlos López (sin tratamientos)
+- María Rodríguez (tratamiento finalizado)
+
+### Tratamientos
+Tipos comunes:
+- Endodoncia (2-3 sesiones)
+- Ortodoncia (12-24 sesiones)
+- Limpieza dental (1 sesión)
+- Implante dental (3-4 sesiones)
+- Corona/Puente (2-3 sesiones)
+
+### Estados de Tratamiento
+- `pendiente_iniciar`: Registrado sin sesiones
+- `en_curso`: Con sesiones en progreso
+- `pendiente_seguimiento`: Sin próxima cita programada
+- `finalizado`: Todas las sesiones completadas
+- `suspendido`: Pausado por solicitud del paciente
+- `abandonado`: Sin contacto >30 días
+
+## Referencias y Documentación
+
+### Supabase
+- Auth: https://supabase.com/docs/guides/auth
+- RLS: https://supabase.com/docs/guides/auth/row-level-security
+- Edge Functions: https://supabase.com/docs/guides/functions
+
+### Tailwind CSS
+- Documentación: https://tailwindcss.com/docs
+- UI Components: Usar Headless UI o Radix UI
+
+### TypeScript
+- Tipar todas las entidades de base de datos
+- Usar interfaces para props de componentes
+- Evitar `any`, preferir `unknown` si es necesario
+
+## Notas Adicionales
+
+Este contexto se aplica a todas las interacciones con agentes de IA trabajando en DentiFlow. Cualquier código generado debe respetar estas convenciones y restricciones.
