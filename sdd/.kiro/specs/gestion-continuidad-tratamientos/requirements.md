@@ -1,8 +1,8 @@
-﻿# Requirements Document
+# Requirements Document
 
 ## Introduction
 
-DentiFlow es un sistema de gestión administrativa para un consultorio dental pequeño. El problema principal que resuelve este feature es el abandono de tratamientos multi-sesión (endodoncias, ortodoncia) cuando los pacientes experimentan mejoría temporal, dejando sus tratamientos incompletos. Este feature "Gestión de Continuidad de Tratamientos Odontológicos" permite que la asistente del consultorio registre pacientes, programe citas, administre tratamientos de varias sesiones e identifique automáticamente a los pacientes que necesitan seguimiento para completar sus tratamientos.
+DentiFlow es un sistema de gestión administrativa para un consultorio dental pequeño. Este feature resuelve uno de los problemas principales del consultorio: el **abandono de tratamientos multisesión** (sin porcentaje de abandono cuantificado en el problema original). El abandono ocurre cuando pacientes dejan incompletos tratamientos multisesión (endodoncias, ortodoncia, etc.) a menudo porque experimentan mejoría temporal y no entienden la importancia de completar todas las sesiones. Este feature "Gestión de Continuidad de Tratamientos Odontológicos" permite que la asistente del consultorio registre pacientes, programe citas, administre tratamientos de varias sesiones e identifique automóticamente a los pacientes que necesitan seguimiento para completar sus tratamientos. **Nota importante**: Este feature se enfoca en prevenir el abandono de tratamientos. La prevención de inasistencias a citas (pacientes que no llegan a citas programadas) es responsabilidad de SPEC-002 (Gestión de Confirmación de Citas).
 
 El sistema está diseñado para ser utilizado principalmente por la asistente del consultorio, quien gestiona todo el flujo operativo, y consultado por la doctora para revisar información y reportes.
 
@@ -15,17 +15,18 @@ This feature assumes the following authentication and authorization infrastructu
 
 1. **Supabase Auth Configured**: Email/password authentication is configured and operational
 2. **Test Users Available**: Two test users exist for development and testing:
-   - sistente@dentiflow.com (rol: asistente) - Full read/write access
+   - sistente@dentiflow.com (rol: asistente) - Full read/write access
    - doctora@dentiflow.com (rol: doctora) - Read-only access to queries and reports
 3. **usuarios Table**: A usuarios table exists with the following structure:
    - id (UUID, references auth.users)
    - 
 ombre_completo (TEXT)
    - correo_electronico (TEXT)
-   - ol (TEXT: 'doctora' or 'asistente')
-   - ctivo (BOOLEAN)
-   - echa_creacion (TIMESTAMPTZ)
-   - echa_actualizacion (TIMESTAMPTZ)
+   - 
+ol (TEXT: 'doctora' or 'asistente')
+   - ctivo (BOOLEAN)
+   - echa_creacion (TIMESTAMPTZ)
+   - echa_actualizacion (TIMESTAMPTZ)
 4. **RLS Policies Active**: Row Level Security policies are implemented on all tables to enforce role-based access control
 5. **Protected Routes**: All application routes require valid authentication before accessing patient or treatment data
 6. **Session Management**: Supabase handles session tokens, refresh tokens, and session expiration (default 8 hours)
@@ -34,13 +35,13 @@ ombre_completo (TEXT)
 
 The following authentication-related functionality is explicitly excluded from this feature:
 
-- ❌ User registration flows and account creation UI
-- ❌ Password reset and recovery workflows
-- ❌ Multi-factor authentication (MFA)
-- ❌ Session management UI (logout, session timeout warnings)
-- ❌ User profile management (change password, update email)
-- ❌ User administration (create/edit/delete users)
-- ❌ Login page design and implementation
+- ? User registration flows and account creation UI
+- ? Password reset and recovery workflows
+- ? Multi-factor authentication (MFA)
+- ? Session management UI (logout, session timeout warnings)
+- ? User profile management (change password, update email)
+- ? User administration (create/edit/delete users)
+- ? Login page design and implementation
 
 ### External Dependencies
 
@@ -66,7 +67,7 @@ The following authentication-related functionality is explicitly excluded from t
 - **Paciente**: Persona que recibe servicios odontológicos en el consultorio
 - **Tratamiento**: Plan de atención odontológica que puede requerir una o múltiples sesiones (Endodoncia, Ortodoncia, Limpieza, Otros)
 - **Sesion**: Cada una de las consultas individuales que conforman un tratamiento
-- **Cita**: Agendamiento de una fecha y hora específica para realizar una sesión de tratamiento
+- **Cita**: Agendamiento de una fecha y hora especófica para realizar una sesión de tratamiento
 - **Seguimiento**: Intento de contacto documentado con un paciente para programar la continuación de su tratamiento
 - **Alerta_de_Seguimiento**: Indicador visible que identifica tratamientos que requieren atención por tener sesiones pendientes sin citas programadas
 - **Tratamiento_en_Riesgo**: Tratamiento con sesiones pendientes que no tiene una próxima cita programada
@@ -81,7 +82,7 @@ The following authentication-related functionality is explicitly excluded from t
 
 #### Acceptance Criteria
 
-1. WHEN the Asistente submits a new patient form with nombre, telefono, whatsapp, and consentimiento_comunicacion, THE Sistema SHALL create a new Paciente record in the Base_de_Datos
+1. WHEN the Asistente submits a new patient form with nombre_completo, telefono y datos administrativos opcionales, THE Sistema SHALL create a new Paciente record in the Base_de_Datos
 2. THE Sistema SHALL validate that telefono contains only numeric characters and has between 8 and 15 digits
 3. THE Sistema SHALL validate that whatsapp contains only numeric characters and has between 8 and 15 digits
 4. WHEN the Asistente searches for a patient by nombre or telefono, THE Sistema SHALL return all matching Paciente records within 500 milliseconds
@@ -96,7 +97,7 @@ The following authentication-related functionality is explicitly excluded from t
 1. WHEN the Asistente creates a Cita with fecha, hora, paciente_id, and estado, THE Sistema SHALL store the Cita in the Base_de_Datos with timezone America/Managua
 2. THE Sistema SHALL validate that fecha is not in the past relative to the current date in timezone America/Managua
 3. THE Sistema SHALL allow estado values of programada, completada, cancelada, or no_asistio
-4. WHEN the Asistente associates a Cita with a Sesion, THE Sistema SHALL store the sesion_id reference in the Cita record
+4. WHEN the Asistente associates a Cita with a Sesion, THE Sistema SHALL store the cita_id reference in the associated Sesion record (sesiones_tratamientos.cita_id); citas does not contain sesion_id
 5. WHEN the Asistente queries Cita records for a specific date range, THE Sistema SHALL return all matching appointments sorted by fecha and hora
 
 ### Requirement 3: Registro de Tratamientos Multi-Sesión
@@ -123,7 +124,7 @@ The following authentication-related functionality is explicitly excluded from t
 4. WHEN the Asistente marks a Sesion as completada by setting fecha_realizacion, THE Sistema SHALL increment sesiones_completadas in the associated Tratamiento by 1 and set fecha_ultima_sesion to fecha_realizacion
 5. IF sesiones_completadas equals total_sesiones_planificadas after marking a Sesion as completada, THEN THE Sistema SHALL update the Tratamiento estado to finalizado and set fecha_finalizacion to the current timestamp in timezone America/Managua
 
-### Requirement 5: Detección Automática de Tratamientos en Riesgo
+### Requirement 5: Detección Automótica de Tratamientos en Riesgo
 
 **User Story:** As an Asistente, I want the system to automatically identify treatments that need follow-up, so that I can proactively contact patients before they abandon their incomplete treatments.
 
@@ -141,11 +142,11 @@ The following authentication-related functionality is explicitly excluded from t
 
 #### Acceptance Criteria
 
-1. WHEN the Asistente creates a Seguimiento with tratamiento_id, fecha_contacto, medio_contacto, resultado, and observaciones, THE Sistema SHALL store the Seguimiento record in the Base_de_Datos
+1. WHEN the Asistente creates a Seguimiento with tratamiento_id, fecha_seguimiento, medio_contacto, resultado, and observaciones, THE Sistema SHALL store the Seguimiento record in the Base_de_Datos
 2. THE Sistema SHALL allow medio_contacto values of telefono, whatsapp, presencial, or correo
 3. THE Sistema SHALL allow resultado values of contacto_exitoso, sin_respuesta, numero_invalido, or paciente_rechaza
-4. THE Sistema SHALL record fecha_contacto with the current timestamp in timezone America/Managua
-5. WHEN the Asistente queries Seguimiento records for a specific Tratamiento, THE Sistema SHALL return all Seguimiento records sorted by fecha_contacto in descending order
+4. THE Sistema SHALL record fecha_seguimiento with the current timestamp in timezone America/Managua
+5. WHEN the Asistente queries Seguimiento records for a specific Tratamiento, THE Sistema SHALL return all Seguimiento records sorted by fecha_seguimiento in descending order
 
 ### Requirement 7: Validación de Integridad de Datos
 
@@ -169,19 +170,19 @@ The following authentication-related functionality is explicitly excluded from t
 2. WHEN an Asistente is authenticated, THE Sistema SHALL grant read and write access to Paciente, Tratamiento, Sesion, Cita, and Seguimiento records
 3. WHEN a Doctora is authenticated, THE Sistema SHALL grant read-only access to Paciente, Tratamiento, Sesion, Cita, and Seguimiento records
 4. WHEN a user is not authenticated, THE Sistema SHALL deny all access to Paciente, Tratamiento, Sesion, Cita, and Seguimiento records
-5. THE Sistema SHALL log all data modification operations with user_id and timestamp in timezone America/Managua
+5. THE Sistema SHALL registrar el usuario responsable y la fecha de las operaciones relevantes de seguimiento y citas; las operaciones sensibles de confirmación se auditarán en SPEC-002. Los instantes se almacenarán como TIMESTAMPTZ y se mostrarán en America/Managua
 
 ### Requirement 9: Consultas y Reportes Básicos
 
-**User Story:** As a Doctora, I want to query treatment status and patient information, so that I can review progress and make clinical decisions.
+**User Story:** As a Doctora, I want to query treatment status and patient information, para revisar el avance y la continuidad administrativa de los tratamientos.
 
 #### Acceptance Criteria
 
 1. WHEN the Doctora or Asistente queries for all Tratamiento records with estado pendiente_seguimiento, THE Sistema SHALL return results within 1 second
 2. WHEN the Doctora or Asistente queries for all Sesion records associated with a specific Tratamiento, THE Sistema SHALL return results sorted by numero_sesion in ascending order
-3. WHEN the Doctora or Asistente queries for all Cita records for a specific date, THE Sistema SHALL return results sorted by hora in ascending order
+3. WHEN the Doctora or Asistente queries for all Cita records for a specific date, THE Sistema SHALL return results sorted by fecha_hora_inicio in ascending order
 4. WHEN the Doctora or Asistente queries for a specific Paciente by paciente_id, THE Sistema SHALL return the Paciente record along with a count of total Tratamiento records associated with that patient
-5. WHEN the Doctora or Asistente queries for all Seguimiento records for a specific Paciente, THE Sistema SHALL return results grouped by Tratamiento and sorted by fecha_contacto in descending order
+5. WHEN the Doctora or Asistente queries for all Seguimiento records for a specific Paciente, THE Sistema SHALL return results grouped by Tratamiento and sorted by fecha_seguimiento in descending order
 
 ### Requirement 10: Actualización de Estados de Tratamiento
 
@@ -194,3 +195,4 @@ The following authentication-related functionality is explicitly excluded from t
 3. WHEN the Asistente updates a Tratamiento estado from suspendido or abandonado to en_curso, THE Sistema SHALL clear fecha_suspension or fecha_abandono respectively
 4. THE Sistema SHALL prevent updating a Tratamiento estado to finalizado if sesiones_completadas is less than total_sesiones_planificadas
 5. WHEN the Asistente updates a Tratamiento estado, THE Sistema SHALL validate that the new estado is one of the allowed values: pendiente_iniciar, en_curso, pendiente_seguimiento, finalizado, suspendido, or abandonado
+

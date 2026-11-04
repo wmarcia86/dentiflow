@@ -1,8 +1,27 @@
-﻿# 📊 RESUMEN: SPEC DRIVEN DEVELOPMENT - DENTIFLOW
+# 📊 RESUMEN: SPEC DRIVEN DEVELOPMENT - DENTIFLOW
 
-## ✅ COMPLETADO EXITOSAMENTE
+## 📋 Estatus: Especificaciones Completadas (Implementación Pendiente)
 
-Has implementado exitosamente el **Spec Driven Development (SDD)** para **DentiFlow** con **2 features principales**:
+**¿Qué está terminado?**
+- ✅ Documentación completa de 2 especificaciones (SPEC-001 y SPEC-002)
+- ✅ Requisitos detallados con criterios de aceptación
+- ✅ Diseño de arquitectura y base de datos
+- ✅ Plan de tareas de implementación (61 tareas, 88 horas)
+- ✅ Validación de especificaciones
+
+**¿Qué aún no se ha hecho?**
+- ⏳ Implementación en código (React, TypeScript, SQL)
+- ⏳ Creación de tablas en Supabase
+- ⏳ Desarrollo de componentes UI
+- ⏳ Testing
+
+**Próximo paso**: Comenzar implementación de SPEC-001 Wave 1
+
+---
+
+## ✅ ESPECIFICACIONES COMPLETADAS
+
+Has documentado mediante **Spec Driven Development (SDD)** para **DentiFlow** con **2 features principales**:
 
 1. **SPEC-001**: Gestión de Continuidad de Tratamientos Odontológicos ✅
 2. **SPEC-002**: Gestión de Confirmación de Citas Odontológicas ✅
@@ -11,7 +30,7 @@ Has implementado exitosamente el **Spec Driven Development (SDD)** para **DentiF
 
 ## 📁 Estructura Creada
 
-\\\
+```
 c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 ├── .kiro/
 │   ├── steering/
@@ -38,8 +57,7 @@ c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 ├── ✅ RESUMEN.md (Este archivo)
 ├── ✅ INDICE.md (Índice completo)
 └── ✅ ARQUITECTURA.md (Diagramas visuales)
-\\\
-
+```
 ---
 
 ## 🎯 Features Principales
@@ -47,11 +65,11 @@ c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 ### SPEC-001: Gestión de Continuidad de Tratamientos Odontológicos
 
 **Problema que Resuelve:**
-- ❌ 30% de pacientes abandonan tratamientos multi-sesión (endodoncia, ortodoncia, periodoncia)
+- ❌ Pacientes abandonan tratamientos multi-sesión (endodoncia, ortodoncia, periodoncia)
 - ❌ Sin seguimiento, pacientes no retornan cuando mejoran temporalmente
 - ❌ Consultorio pierde ingresos y pacientes
 
-**Solución Implementada:**
+**Solución Especificada:**
 - ✅ CRUD de pacientes, citas, tratamientos, sesiones
 - ✅ Tabla sesiones_tratamientos con progreso automático
 - ✅ Detección automática de tratamientos pendientes de seguimiento
@@ -74,7 +92,7 @@ c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 - ❌ Sin confirmación previa, pacientes olvidan o no llegan
 - ❌ Consultorio pierde tiempo y dinero en citas no cubiertas
 
-**Solución Implementada:**
+**Solución Especificada:**
 - ✅ Gestión de confirmación de citas (manual)
 - ✅ Cancelaciones y reprogramaciones
 - ✅ Historial completo de gestiones
@@ -103,7 +121,7 @@ Contexto persistente aplicable a TODOS los agentes trabajando en DentiFlow.
 - ✅ Seguridad: Supabase Auth + RLS
 - ✅ Zona Horaria: America/Managua
 - ✅ Restricciones: NO expedientes clínicos, NO diagnósticos
-- ✅ Prioridades: Fase 1 (MVP), Fase 2 (WhatsApp), Fase 3 (Reportes)
+- ✅ Prioridades: Fase 1 (MVP), SPEC-002 (confirmaciones); integraciones externas solo en visión futura
 
 **Tamaño**: 9 KB | **Uso**: Referencia constante
 
@@ -175,35 +193,30 @@ Guía de marca y diseño visual para asegurar consistencia UI/UX.
 ## 🧪 Criterios de Aceptación Principales
 
 ### CA1: Registro de Tratamiento Multi-Sesión (SPEC-001)
-`
+```
 CUANDO: asistente registra tratamiento con 3 sesiones
 ENTONCES: se crea con estado='pendiente_iniciar', sesiones_completadas=0
-`
-
+```
 ### CA2: Control Automático de Progreso (SPEC-001)
-`
+```
 CUANDO: marca sesión #2 como completada
 ENTONCES: sesiones_completadas incrementa, fecha_ultima_sesion se actualiza
-`
-
+```
 ### CA3: Detección Automática de Alertas (SPEC-001)
-`
+```
 CUANDO: sesiones_completadas < total Y NO existe cita futura
 ENTONCES: estado='pendiente_seguimiento' Y alerta visible
-`
-
+```
 ### CA4: Gestión de Confirmación (SPEC-002)
-`
+```
 CUANDO: registra confirmación de cita por teléfono
 ENTONCES: se guarda fecha, medio, resultado
-`
-
+```
 ### CA5: Cancelación y Reprogramación (SPEC-002)
-`
+```
 CUANDO: cancela cita
 ENTONCES: se crea registro en gestiones_citas con motivo
-`
-
+```
 ---
 
 ## 🚀 Próximos Pasos
@@ -277,5 +290,16 @@ Fase 2 (Google Calendar) y Fase 3 (WhatsApp automation).
 ---
 
 **Creado con Spec Driven Development usando Kiro**  
-**Status**: ✅ LISTO PARA ENTREGAR  
+**Estado documental**: preparado para implementación; pruebas de base de datos pendientes  
 **Próximo paso**: Comienza implementación de SPEC-001 Wave 1
+
+
+## Revisión de consistencia v7
+
+- SPEC-001 incorpora `public.usuarios` como tabla de perfiles de lectura protegida, con aprovisionamiento administrativo.
+- Las cinco tablas operativas de SPEC-001 emplean RLS separadas por operación, sin borrado directo.
+- Se define exclusión de solapamiento por paciente en `citas`, con `btree_gist`.
+- SPEC-002 utiliza un límite único de 30 días para reprogramación y conserva una sola gestión histórica por operación.
+- **Estado real:** documentación preparada para implementación; no son migraciones ejecutadas ni funcionalidades comprobadas.
+
+Las cifras históricas de tablas y horas incluidas arriba son estimaciones anteriores a estos requisitos transversales y deben recalcularse al planificar la ejecución.

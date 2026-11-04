@@ -1,8 +1,8 @@
-﻿# 📑 Índice Completo - DentiFlow SDD
+# 📑 Índice Completo - DentiFlow SDD
 
 ## Resumen Ejecutivo
 
-**2 Specs completadas y validadas:**
+**2 especificaciones redactadas (validación de ejecución pendiente):**
 - ✅ SPEC-001: Gestión de Continuidad de Tratamientos Odontológicos (50h, 23 tareas)
 - ✅ SPEC-002: Gestión de Confirmación de Citas Odontológicas (38h, 38 tareas)
 
@@ -12,7 +12,7 @@
 
 ## Estructura de Directorios
 
-\\\
+```
 c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 │
 ├─ .kiro/
@@ -39,8 +39,7 @@ c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 ├─ RESUMEN.md                                (Resumen ejecutivo)
 ├─ INDICE.md                                 (Este archivo)
 └─ ARQUITECTURA.md                           (Diagramas visuales)
-\\\
-
+```
 ---
 
 ## Guía de Lectura Rápida
@@ -81,7 +80,7 @@ c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 
 ## SPEC-001: Gestión de Continuidad de Tratamientos
 
-**Problema**: 30% de pacientes abandonan tratamientos multi-sesión
+**Problema**: Pacientes abandonan tratamientos multi-sesión
 
 **Solución**: 
 - CRUD de tratamientos con N sesiones
@@ -136,5 +135,10 @@ c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 
 ---
 
-**Status**: ✅ LISTO PARA ENTREGAR  
+**Estado documental**: preparado para implementación; pruebas de base de datos pendientes  
 **Siguientes pasos**: Implementación de SPEC-001 Wave 1
+
+
+## Nota de revisión v7
+
+Revisar `VALIDACION_V7.md` para las correcciones de seguridad, perfiles, reprogramación y concurrencia. Los documentos siguen siendo especificaciones: el SQL de referencia requiere pruebas reales en Supabase antes de un despliegue.

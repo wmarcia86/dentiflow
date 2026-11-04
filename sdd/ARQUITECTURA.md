@@ -1,8 +1,26 @@
-﻿# 🏗️ DentiFlow - Arquitectura Completa
+# 🏗️ DentiFlow - Arquitectura Completa
+
+## 📋 Nota Importante: Especificaciones vs Implementación
+
+**Estatus Actual**:
+- ✅ **ESPECIFICACIONES (Completadas)**: SPEC-001 y SPEC-002 documentadas completamente
+- ⏳ **IMPLEMENTACIÓN (Pendiente)**: Se inicia después de aprobación de especificaciones
+
+Esta arquitectura describe el **diseño final previsto** después de implementar todas las tareas en las especificaciones. Los datos que se muestran son el resultado esperado tras completar:
+- SPEC-001: 50 horas, 23 tareas
+- SPEC-002: 38 horas, 38 tareas
+
+**Funcionalidades NO implementadas aún**:
+- No hay tablas en Supabase
+- No hay API endpoints
+- No hay componentes React
+- No hay datos de prueba
+
+---
 
 ## Vista General del Sistema
 
-\\\
+```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     DentiFlow System Architecture                │
 │                  (SPEC-001 + SPEC-002 Completo)                 │
@@ -69,11 +87,10 @@
          │  │ - Citas pendientes de conf.  │  │
          │  └──────────────────────────────┘  │
          └──────────────────────────────────┘
-\\\
-
+```
 ## Flujo de Datos Principal (SPEC-001 + SPEC-002)
 
-\\\
+```
 SPEC-001: GESTIÓN DE CONTINUIDAD DE TRATAMIENTOS
 ═══════════════════════════════════════════════════
 
@@ -82,7 +99,7 @@ CREAR PACIENTE → CREAR TRATAMIENTO (N sesiones) → CREAR CITA
                 COMPLETAR SESIONES            CONFIRMAR CITA (SPEC-002)
                 (1, 2, 3, ...)                      ↓
                            ↓              ┌─────────┴──────────┐
-        Sistema incrementa:          Confirmada         Cancelada
+        Base de datos recalcula:          Confirmada         Cancelada
         - sesiones_completadas       (estado=            (estado=
         - fecha_ultima_sesion         confirmada)         cancelada)
         - si último →                     ↓                  ↓
@@ -124,7 +141,7 @@ ASISTENTE VE EN PANEL "CONFIRMACIONES"
 │ └─ Cancela → Cancela cita           │
 └───────────────────────────────────────┘
         ↓
-REGISTRA GESTIÓN EN "gestiones_citas"
+RPC transaccional registra gestión en "gestiones_citas"
 - Fecha del intento
 - Medio utilizado
 - Resultado
@@ -137,11 +154,10 @@ CITA ESTADO ACTUALIZADO
         ↓
 HISTORIAL DISPONIBLE
 (Auditoría completa de todos los intentos)
-\\\
-
+```
 ## Modelo de Datos Completo
 
-\\\sql
+```sql
 --- SPEC-001 ---
 pacientes (1:N) → citas (1:N) → sesiones_tratamientos
          ↓
@@ -151,24 +167,21 @@ pacientes (1:N) → citas (1:N) → sesiones_tratamientos
 
 --- SPEC-002 (Extensión) ---
         ↓
-   gestiones_citas (NEW) ← pacientes (1:N)
-                       ↑
-                     citas (1:N)
+   gestiones_citas (NEW) ← citas (1:N)
 
 Constraints SPEC-001:
 - sesiones_completadas <= total_sesiones_planificadas
 - fecha_hora_fin > fecha_hora_inicio
-- numero_sesion <= total_sesiones_planificadas
+- numero_sesion <= total_sesiones_planificadas (validado por trigger o RPC, no por CHECK entre tablas)
 
 Constraints SPEC-002:
 - confirmacion_estado IN ('pendiente', 'confirmada', 'cancelada', 'reprogramada')
 - retry_count >= 0
-- fecha_confirmacion >= fecha_programa (si confirmada)
-\\\
-
+- fecha_confirmacion: puede ser anterior a fecha_hora_inicio; corresponde al momento real de confirmación, no a la hora de la cita.
+```
 ## Estados de Tratamiento (SPEC-001)
 
-\\\
+```
 ┌────────────────────────────────────────────┐
 │ Máquina de Estados de Tratamiento          │
 │ (SPEC-001: Gestión de Continuidad)         │
@@ -204,11 +217,10 @@ Constraints SPEC-002:
 Otros estados:
 - suspendido: Paciente solicita pausa
 - abandonado: Sin contacto > 30 días
-\\\
-
+```
 ## Estados de Confirmación de Citas (SPEC-002)
 
-\\\
+```
 ┌────────────────────────────────────────────┐
 │ Máquina de Estados de Confirmación         │
 │ (SPEC-002: Gestión de Confirmación)        │
@@ -238,11 +250,10 @@ Auditoría completa en gestiones_citas:
 - Medio utilizado (teléfono, whatsapp, presencial)
 - Resultado (contacto_exitoso, sin_respuesta, rechaza)
 - Observaciones del asistente
-\\\
-
+```
 ## Componentes React
 
-\\\
+```
 App
 ├── Header (Logo, Usuario, Logout)
 ├── Sidebar (Navegación)
@@ -284,11 +295,10 @@ App
 Componentes Comunes:
 - Header, Sidebar, Badge, LoadingSpinner, ErrorMessage
 - TablaGenerica, ModalGenerico, FormularioGenerico
-\\\
-
+```
 ## Timeline de Implementación (Completo)
 
-\\\
+```
 FASE 1: SPEC-001 (Semanas 1-2)
 ═════════════════════════════════
 
@@ -336,11 +346,10 @@ Subtotal SPEC-002: 38 horas
 
 TOTAL: 88 horas ≈ 4 semanas (20 días × 4.4 horas/día)
 Equipo: Backend Lead + Backend Dev + Frontend Lead + QA
-\\\
-
+```
 ## Criterios de Aceptación Visualizados
 
-\\\
+```
 SPEC-001 - GESTIÓN DE CONTINUIDAD
 ═════════════════════════════════════
 
@@ -387,11 +396,10 @@ CA9: Cancelar Cita
 CA10: Ver Historial de Gestiones
       Input: Asistente abre historial de cita X
       Output: ✅ Todos los intentos de confirmación (media, resultados, fechas)
-\\\
-
+```
 ## Matriz de Seguridad (RLS)
 
-\\\
+```
         │ SELECT │ INSERT │ UPDATE │ DELETE │ Notas
 ────────┼────────┼────────┼────────┼────────┼──────────────────────
 Asistente│   ✅   │   ✅   │   ✅   │   ❌   │ Lectura + escritura completa
@@ -405,11 +413,10 @@ Aplicado a todas las tablas (SPEC-001 + SPEC-002):
 - sesiones_tratamientos
 - seguimientos_pacientes
 - gestiones_citas (NEW)
-\\\
-
+```
 ## Tecnologías Stack
 
-\\\
+```
 FRONTEND:
 ├─ React 18+
 ├─ TypeScript 5+
@@ -441,11 +448,10 @@ DEPLOYMENT:
 ├─ Frontend: Vercel o Netlify
 ├─ Backend: Supabase hosted
 └─ Database: Supabase PostgreSQL (America/Managua)
-\\\
-
+```
 ## Próximas Fases (Roadmap Futuro)
 
-\\\
+```
 Fase 1: ✅ ESPECIFICADA (Implementación pendiente)
 - Gestión de Continuidad de Tratamientos (SPEC-001)
 - Estimación: 50 horas
@@ -470,8 +476,7 @@ Fase 5: ⏳ DISEÑO FUTURO (Analytics)
 - Reportes exportables
 - Análisis de tendencias
 - Predicción de abandonos
-\\\
-
+```
 ---
 
 ## Resumen Ejecutivo de Arquitectura
@@ -491,3 +496,12 @@ Fase 5: ⏳ DISEÑO FUTURO (Analytics)
 ---
 
 Este documento representa la arquitectura **COMPLETA**, **VALIDADA** y **ESPECIFICADA** para DentiFlow con ambas features (SPEC-001 + SPEC-002).
+
+
+## Actualización de integridad y permisos (revisión SDD v7)
+
+- SPEC-001 define `public.usuarios` como perfiles vinculados con `auth.users(id)`; la identidad de rol se valida con `app_metadata` protegido, no con el perfil.
+- Las políticas RLS de pacientes, citas, tratamientos, sesiones y seguimientos se separan en SELECT, INSERT y UPDATE; no se usa FOR ALL ni DELETE directo.
+- La restricción `citas_sin_solapamiento_paciente` (`btree_gist`) impide solapamientos del mismo paciente incluso con concurrencia.
+- SPEC-002 limita la reprogramación a 30 días en frontend y backend, usa RPC atómica y crea una sola gestión histórica.
+- Google Calendar y WhatsApp quedan únicamente como posibles integraciones futuras, fuera del alcance de ambas SPEC.

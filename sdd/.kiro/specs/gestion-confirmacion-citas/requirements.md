@@ -4,11 +4,11 @@
 
 ### Gestión de Confirmación de Citas Odontológicas
 
-DentiFlow es un sistema de gestión administrativa para un consultorio dental pequeño. El problema que resuelve este feature es el alto porcentaje de inasistencias a las citas programadas, debido a que no se confirman las citas con los pacientes antes de la fecha programada. Este feature "Gestión de Confirmación de Citas Odontológicas" permite que la asistente del consultorio identifique las citas pendientes de confirmación, registre las respuestas de los pacientes, gestione cancelaciones y reprogramaciones, y documente el historial de gestiones realizadas.
+DentiFlow es un sistema de gestión administrativa para un consultorio dental pequeño. Este feature resuelve uno de los problemas principales del consultorio: el **alto porcentaje de inasistencias a las citas programadas** (~30%). Las inasistencias son ausencias a citas ya programadas, y ocurren principalmente porque no se confirman las citas con los pacientes antes de la fecha programada. Este feature "Gestión de Confirmación de Citas Odontológicas" permite que la asistente del consultorio identifique las citas pendientes de confirmación, registre las respuestas de los pacientes, gestione cancelaciones y reprogramaciones, y documente el historial de gestiones realizadas. **Nota importante**: Este feature se enfoca en prevenir inasistencias. La prevención del abandono de tratamientos (dejar tratamientos incompletos) es responsabilidad de SPEC-001 (Gestión de Continuidad de Tratamientos).
 
 El sistema está diseñado para ser utilizado principalmente por la asistente del consultorio, quien realiza todas las acciones operativas de confirmación, cancelación y reprogramación de citas, y consultado por la doctora para revisar el estado de las citas confirmadas y el historial de gestiones.
 
-**Dependencia**: Este feature depende completamente de SPEC-001 (Gestión de Continuidad de Tratamientos Odontológicos). Reutiliza las tablas pacientes, citas y tratamientos, y extiende la funcionalidad con gestiones_citas para documentar el proceso de confirmación.
+**Dependencia técnica**: SPEC-001 proporciona `public.usuarios` y la exclusión de citas solapadas. Este feature depende de SPEC-001 (Gestión de Continuidad de Tratamientos Odontológicos). Reutiliza las tablas pacientes, citas y tratamientos, y extiende la funcionalidad con gestiones_citas para documentar el proceso de confirmación.
 
 ---
 
@@ -116,9 +116,9 @@ The following functionality is explicitly excluded:
 
 #### Acceptance Criteria
 
-1. WHEN the Asistente creates a Gestion_de_Cita with tipo_gestion = 'confirmacion' and respuesta_paciente = 'confirmada', THE Sistema SHALL create a gestion record linked to the Cita
+1. WHEN the Asistente solicita mediante una operación autenticada del backend una Gestion_de_Cita con tipo_gestion = 'confirmacion' and respuesta_paciente = 'confirmada', THE Sistema SHALL create a gestion record linked to the Cita
 2. THE Sistema SHALL update the associated Cita necesita_confirmacion = false when confirmación is recorded
-3. WHEN a confirmation is recorded, THE Sistema SHALL record fecha_gestion with current timestamp in timezone America/Managua
+3. WHEN a confirmation is recorded, THE Sistema SHALL guardar fecha_gestion como TIMESTAMPTZ en PostgreSQL y mostrarla en la zona horaria America/Managua
 4. WHEN the Asistente provides observaciones during confirmation (e.g., "paciente confirmó vía llamada a las 3pm"), THE Sistema SHALL store the complete text
 5. WHEN a Cita has a Gestion_de_Cita with respuesta_paciente = 'confirmada', THEN the Cita estado SHALL NOT automatically change to 'cancelada' or 'no_asistio' without explicit action
 
@@ -128,10 +128,10 @@ The following functionality is explicitly excluded:
 
 #### Acceptance Criteria
 
-1. WHEN the Asistente creates a Gestion_de_Cita with tipo_gestion = 'cancelacion' and respuesta_paciente = 'cancelada', THE Sistema SHALL create a gestion record linked to the Cita
+1. WHEN the Asistente solicita mediante una operación autenticada del backend una Gestion_de_Cita con tipo_gestion = 'cancelacion' and respuesta_paciente = 'cancelada', THE Sistema SHALL create a gestion record linked to the Cita
 2. WHEN a cancellation is recorded, THE Sistema SHALL update the associated Cita estado = 'cancelada' and fecha_cancelacion = current timestamp
 3. WHEN the Asistente provides motivo_cancelacion (e.g., "paciente enfermo"), THE Sistema SHALL store the reason for audit purposes
-4. WHEN a cancellation is recorded, THE Sistema SHALL record the date and time of cancellation in timezone America/Managua
+4. WHEN a cancellation is recorded, THE Sistema SHALL guardar el instante de cancelación como TIMESTAMPTZ y mostrarlo en America/Managua
 5. WHEN a Cita is cancelled, the Tratamiento associated with the Paciente SHALL remain unchanged (no automatic status updates)
 
 ### Requirement 5: Reprogramación de Citas
@@ -140,9 +140,9 @@ The following functionality is explicitly excluded:
 
 #### Acceptance Criteria
 
-1. WHEN the Asistente creates a Gestion_de_Cita with tipo_gestion = 'reprogramacion', THE Sistema SHALL allow specifying nueva_fecha_hora for the appointment
+1. WHEN the Asistente solicita mediante una operación autenticada del backend una Gestion_de_Cita con tipo_gestion = 'reprogramacion', THE Sistema SHALL allow specifying nueva_fecha_hora for the appointment
 2. WHEN a reprogramacion is recorded, THE Sistema SHALL create a new Cita record with the nueva_fecha_hora and update the previous Cita estado = 'cancelada'
-3. WHEN a reprogramacion occurs, THE Sistema SHALL create two Gestion_de_Cita records: one for the cancellation of the original and one for the creation of the new appointment
+3. WHEN a reprogramacion occurs, THE Sistema SHALL create exactamente UNA Gestion_de_Cita de reprogramación asociada a la cita original, con nueva_cita_id apuntando a la cita creada; los cambios deberán ser atómicos
 4. WHEN the Asistente enters motivo_reprogramacion (e.g., "paciente no puede asistir el día indicado"), THE Sistema SHALL store the reason for documentation
 5. WHEN reprogramming, THE Sistema SHALL validate that nueva_fecha_hora is not in the past relative to the current date in timezone America/Managua
 
@@ -154,7 +154,7 @@ The following functionality is explicitly excluded:
 
 1. WHEN the Asistente views historial for a Cita, THE Sistema SHALL display all Gestion_de_Cita records linked to that Cita sorted by fecha_gestion in descending order
 2. FOR each Gestion_de_Cita, THE Sistema SHALL display: tipo_gestion, respuesta_paciente, fecha_gestion, observaciones, and usuario_id (who created the record)
-3. WHEN the Asistente filters gestiones by tipo_gestion, THE Sistema SHALL return only records matching that type (confirmacion, cancelacion, reprogramacion)
+3. WHEN the Asistente filters gestiones by tipo_gestion, THE Sistema SHALL return only records matching that type (contacto, confirmacion, cancelacion, reprogramacion)
 4. WHEN the Asistente clicks on a Gestion_de_Cita record, THE Sistema SHALL display full details including motivo, observaciones, and complete audit trail
 5. WHEN querying gestion history for a specific Cita, THE Sistema SHALL return results within 500 milliseconds
 
@@ -176,11 +176,11 @@ The following functionality is explicitly excluded:
 
 #### Acceptance Criteria
 
-1. WHEN the Asistente creates a Gestion_de_Cita with respuesta_paciente = 'sin_respuesta', THE Sistema SHALL record the failed contact attempt
-2. WHEN the Asistente creates a Gestion_de_Cita with respuesta_paciente = 'numero_invalido', THE Sistema SHALL mark the contact method as unreliable and suggest using alternative contact information
-3. WHEN the Asistente creates a Gestion_de_Cita with respuesta_paciente = 'paciente_rechaza', THE Sistema SHALL record the explicit rejection with observaciones
+1. WHEN the Asistente registra una gestión de tipo 'contacto' con respuesta_paciente = 'sin_respuesta', THE Sistema SHALL record the failed contact attempt
+2. WHEN the Asistente registra una gestión de tipo 'contacto' con respuesta_paciente = 'numero_invalido', THE Sistema SHALL mark the contact method as unreliable and suggest using alternative contact information
+3. WHEN the Asistente registra una gestión de tipo 'contacto' con respuesta_paciente = 'paciente_rechaza', THE Sistema SHALL record the explicit rejection with observaciones
 4. WHEN multiple failed contact attempts occur (≥2) for the same Cita, THE Sistema SHALL display a warning indicator suggesting alternative contact methods
-5. THE Sistema SHALL store retry_count for each Cita tracking the number of contact attempts made
+5. THE Sistema SHALL almacenar retry_count en citas como número de intentos fallidos (sin_respuesta, numero_invalido o paciente_rechaza), incrementado desde una operación de backend transaccional
 
 ### Requirement 9: Reportes de Confirmación de Citas
 
@@ -191,7 +191,7 @@ The following functionality is explicitly excluded:
 1. WHEN the Doctora queries for confirmation statistics, THE Sistema SHALL display: total Cita records, confirmadas count, canceladas count, reprogramadas count, y pendientes count
 2. WHEN the Doctora filters by date range, THE Sistema SHALL return statistics for Cita records within that range
 3. WHEN the Doctora queries for confirmation rate (%), THE Sistema SHALL calculate: (confirmadas / total) * 100 with precision to 2 decimal places
-4. WHEN the Doctora queries for cancellation reasons, THE Sistema SHALL group Gestion_de_Cita records by motivo_cancelacion and display frequency count
+4. WHEN the Doctora queries for cancellation reasons, THE Sistema SHALL agrupar registros de gestiones_citas por motivo cuando tipo_gestion = 'cancelacion' y mostrar la frecuencia
 5. WHEN the Doctora exports report data, THE Sistema SHALL include: Cita details, Gestion history, confirmation status, and timestamps in CSV or PDF format
 
 ### Requirement 10: Validación e Integridad de Datos de Gestiones
@@ -201,7 +201,7 @@ The following functionality is explicitly excluded:
 #### Acceptance Criteria
 
 1. WHEN the Asistente attempts to create a Gestion_de_Cita with a cita_id that does not exist, THE Sistema SHALL reject the operation and display an error message
-2. WHEN the Asistente attempts to create a Gestion_de_Cita with tipo_gestion not in (confirmacion, cancelacion, reprogramacion), THE Sistema SHALL reject the operation
+2. WHEN the Asistente attempts to create a Gestion_de_Cita with tipo_gestion not in (contacto, confirmacion, cancelacion, reprogramacion), THE Sistema SHALL reject the operation
 3. WHEN the Asistente attempts to create a Gestion_de_Cita with respuesta_paciente not in (confirmada, cancelada, reprogramada, sin_respuesta, numero_invalido, paciente_rechaza), THE Sistema SHALL reject the operation
 4. THE Sistema SHALL enforce that every Gestion_de_Cita record includes usuario_id (who created it) and fecha_gestion (when it was created)
 5. WHEN querying Gestion_de_Cita records, THE Sistema SHALL enforce RLS policies to ensure only authorized users can view and modify records
@@ -221,3 +221,4 @@ The following functionality is explicitly excluded:
 - Electronic signature or consent management
 
 </content>
+

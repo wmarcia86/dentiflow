@@ -17,6 +17,13 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
 
 ---
 
+## Dependencias obligatorias previas a SPEC-002
+
+- [ ] Verificar que SPEC-001 ya creó `public.usuarios` con vínculo a `auth.users`, permisos de lectura seguros y datos de perfiles aprovisionados.
+- [ ] Verificar que SPEC-001 instaló la restricción `citas_sin_solapamiento_paciente` (requiere `btree_gist`).
+- [ ] Comprobar que el máximo para reprogramar es de **30 días** tanto en el componente como en la RPC.
+- [ ] La reprogramación crea **una única gestión histórica**; validar transacción y concurrencia con dos peticiones simultáneas.
+
 ## Tasks
 
 ### Phase 0: Setup y Verificación
@@ -67,7 +74,7 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
 - [ ] 1.4 Crear vistas SQL para queries principales
-  - Crear vista v_citas_pendientes_confirmacion (Q1 del design)
+  - Consultar Q1 del diseño o crear `v_citas_pendientes_confirmacion` con definición SQL documentada y RLS seguro
   - Crear vista v_gestiones_por_cita (Q2 del design)
   - Crear vista v_estadisticas_confirmacion (Q3 del design)
   - Crear vista v_motivos_cancelacion (Q4 del design)
@@ -78,43 +85,45 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
 
 ---
 
+### Controles de seguridad obligatorios antes de Phase 2
+
+- [ ] Aplicar el esquema append-only de `gestiones_citas`: solo SELECT desde el frontend, sin INSERT/UPDATE/DELETE directo.
+- [ ] Aplicar revocación de UPDATE directo de estados y fechas críticas en `citas` y verificar permisos con JWT autenticados.
+- [ ] Desplegar y probar RPC `confirmar_cita`, `cancelar_cita`, `registrar_contacto_cita` y `reprogramar_cita` con propietario confiable, SECURITY DEFINER, search_path seguro y autorización interna.
+- [ ] Verificar que una reprogramación crea **una única gestión**, que un fallo revierte todos los cambios y que dos peticiones concurrentes no generan reservas duplicadas.
+
 ### Phase 2: Backend APIs (Edge Functions o Hooks)
 
 - [ ] 2.1 Implementar función: crear Gestion_de_Cita (confirmación)
-  - Crear Supabase Edge Function o hook TypeScript: createGestionConfirmacion
-  - Input: { cita_id: UUID, observaciones: string, usuario_id: UUID }
+  - Invocar función PostgreSQL `confirmar_cita` desde hook TypeScript (sin writes directos)
+  - Input: { cita_id: UUID, observaciones?: string }; usuario_id se obtiene mediante auth.uid() en RPC
   - Validar: cita_id existe, observaciones.length > 0
-  - Lógica: INSERT INTO gestiones_citas con tipo_gestion='confirmacion', respuesta_paciente='confirmada'
-  - Lógica: UPDATE citas SET necesita_confirmacion=false, confirmacion_estado='confirmada', fecha_confirmacion=NOW()
+  - Lógica: invocar RPC `confirmar_cita` (actualización y gestión dentro de una sola transacción)
   - Output: { success: true, gestion_id: UUID } o { error: string }
   - Testear manualmente desde panel Supabase
   - _Requirements: 3.1, 3.2, 3.3_
 
 - [ ] 2.2 Implementar función: crear Gestion_de_Cita (cancelación)
-  - Crear función: createGestionCancelacion
-  - Input: { cita_id: UUID, motivo: string, observaciones?: string, usuario_id: UUID }
+  - Invocar RPC PostgreSQL `cancelar_cita`
+  - Input: { cita_id: UUID, motivo: string, observaciones?: string }; usuario_id se obtiene en servidor
   - Validar: cita_id existe, motivo no vacío
-  - Lógica: INSERT INTO gestiones_citas con tipo_gestion='cancelacion', respuesta_paciente='cancelada'
-  - Lógica: UPDATE citas SET estado='cancelada', confirmacion_estado='cancelada', fecha_cancelacion=NOW()
-  - Lógica: UPDATE citas SET retry_count = retry_count + 1 si respuesta fue 'sin_respuesta'
+  - Lógica: invocar RPC `cancelar_cita` (actualización y gestión en la misma transacción). No aumentar retry_count al cancelar.
   - Output: { success: true, gestion_id: UUID } o { error: string }
   - _Requirements: 4.1, 4.2, 4.3_
 
 - [ ] 2.3 Implementar función: crear Gestion_de_Cita (reprogramación)
-  - Crear función: createGestionReprogramacion
-  - Input: { cita_id: UUID, nueva_fecha_hora: TIMESTAMPTZ, motivo: string, usuario_id: UUID }
+  - Invocar RPC PostgreSQL `reprogramar_cita`
+  - Input: { cita_id: UUID, nueva_fecha_hora: TIMESTAMPTZ, motivo: string }; usuario_id se obtiene en servidor
   - Validar: cita_id existe, nueva_fecha_hora > NOW(), nueva_fecha_hora no en pasado
-  - Lógica: Crear NEW Cita con estado='programada', confirmacion_estado='pendiente'
-  - Lógica: UPDATE Cita original a estado='cancelada'
-  - Lógica: INSERT INTO gestiones_citas (2 registros): uno para cancelación, uno para creación de nueva cita
-  - Lógica: Actualizar nueva_cita_id en registro de gestión
+  - Lógica: Ejecutar RPC atómica `reprogramar_cita` (incluye marcar cita anterior, crear nueva, mover sesiones pendientes y registrar una gestión)
+  - La RPC realiza TODO en una única transacción, sin operaciones CRUD adicionales del frontend. Un solo historial vincula ambas citas.
   - Output: { success: true, nueva_cita_id: UUID } o { error: string }
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
 - [ ] 2.4 Implementar función: obtener Citas Pendientes de Confirmación
   - Crear función: getCitasPendientes
-  - Input: { filtro?: 'todas' | 'proximas_48h', ordenar?: 'fecha_asc' | 'fecha_desc' | 'reintentos', usuarioId: UUID }
-  - Query: SELECT from v_citas_pendientes_confirmacion con filtros aplicados
+  - Input: { filtro?: 'todas' | 'proximas_48h', ordenar?: 'fecha_asc' | 'fecha_desc' | 'reintentos' }; usuario autenticado obtenido del JWT
+  - Query: SELECT sobre citas con filtros de Q1 o crear y documentar la vista v_citas_pendientes_confirmacion con filtros aplicados
   - Validar: usuario tiene rol 'asistente' o 'doctora' (lectura)
   - Implementar paginación: LIMIT 20 OFFSET {page*20}
   - Output: { citas: Cita[], total: number } o { error: string }
@@ -122,8 +131,8 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
 
 - [ ] 2.5 Implementar función: obtener Historial de Gestiones
   - Crear función: getHistorialGestiones
-  - Input: { cita_id: UUID, usuarioId: UUID }
-  - Query: SELECT from v_gestiones_por_cita (Q2)
+  - Input: { cita_id: UUID }; identidad derivada de sesión autenticada
+  - Query: SELECT sobre gestiones_citas + public.usuarios según Q2, protegido por RLS
   - Validar: usuario tiene permisos de lectura
   - Output: { gestiones: GestionCita[] } o { error: string }
   - Verificar que retorna todas las gestiones sin omisiones
@@ -132,7 +141,7 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
 - [ ] 2.6 Implementar función: obtener Estadísticas de Confirmación
   - Crear función: getEstadisticasConfirmacion
   - Input: { fecha_inicio: DATE, fecha_fin: DATE, usuarioId: UUID }
-  - Query: SELECT from v_estadisticas_confirmacion (Q3)
+  - Query: SELECT de Q3; si se crea vista, definirla explícitamente
   - Calcular: total_citas, confirmadas, canceladas, reprogramadas, pendientes, tasa_confirmacion_pct
   - Output: { stats: EstadisticasConfirmacion } o { error: string }
   - _Requirements: 9.1, 9.2, 9.3_
@@ -140,16 +149,30 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
 - [ ] 2.7 Implementar función: obtener Motivos de Cancelación
   - Crear función: getMotivoCancelacion
   - Input: { fecha_inicio: DATE, fecha_fin: DATE, usuarioId: UUID }
-  - Query: SELECT from v_motivos_cancelacion (Q4)
+  - Query: SELECT de Q4; si se crea vista, definirla explícitamente
   - Output: { motivos: { motivo: string, frecuencia: number, porcentaje: number }[] } o { error: string }
   - _Requirements: 9.4_
 
-- [ ] 2.8 Implementar validaciones en Edge Functions
+- [ ] 2.8 Implementar función: validar Conflictos de Horarios
+  - Crear función: validateConflictosHorarios
+  - Input: { paciente_id: UUID, nueva_fecha_hora: TIMESTAMPTZ, excluir_cita_id?: UUID }
+  - Query: aplicar la exclusión GiST `citas_sin_solapamiento_paciente`; la consulta previa de intervalos es informativa y no sustituye la restricción
+  - Validar: nueva_fecha_hora no solapa con otras citas del mismo paciente
+  - Lógica: Excluir cita_id si se proporciona (para reprogramaciones)
+  - Output: { conflictos: number, valid: boolean } o { error: string }
+  - Casos de prueba:
+    * Sin conflictos → valid=true, conflictos=0
+    * Con 1 conflicto → valid=false, conflictos=1
+    * Excluyendo cita actual → valid=true (no contar la cita que se reprograma)
+  - Integrar solo como prevalidación UX; reprogramar_cita valida de manera transaccional
+  - _Requirements: 5.1, 5.5_
+
+- [ ] 2.9 Implementar validaciones en Edge Functions
   - Validar todos los campos requeridos no sean null/empty
-  - Validar tipo_gestion está en ('confirmacion', 'cancelacion', 'reprogramacion')
+  - Validar tipo_gestion está en ('contacto', 'confirmacion', 'cancelacion', 'reprogramacion')
   - Validar respuesta_paciente está en valores permitidos
   - Validar fechas no estén en el pasado
-  - Validar referencias externas (cita_id, usuario_id, paciente_id) existen
+  - Validar cita_id y relaciones existentes; usuario_id = auth.uid(), sin aceptarlo desde el cliente
   - Retornar errores descriptivos para cada validación fallida
   - _Requirements: 10.1, 10.2, 10.3_
 
@@ -220,7 +243,7 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
 - [ ] 3.7 Crear componente: ModalReprogramacionCita
   - Crear archivo src/features/confirmacion-citas/components/ModalReprogramacionCita.tsx
   - Mostrar fecha/hora actual de la cita
-  - Date picker: Rango mínimo hoy, máximo 30 días adelante
+  - Date picker: Rango mínimo hoy, máximo 30 días adelante (mismo límite en frontend y RPC)
   - Time picker: Bloques de 30min, horario 9am-6pm
   - Validar nueva_fecha_hora no esté en el pasado
   - Dropdown para motivo: "Paciente no puede", "Conflicto agenda", "Solicitud paciente", "Otros"
@@ -332,8 +355,8 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
   - Crear test: reintentos.property.test.ts
   - Generar: UUID cita, múltiples gestiones con respuesta_paciente='sin_respuesta' (1-5)
   - Precondición: Gestiones existen
-  - Acción: Actualizar retry_count después de cada intento fallido
-  - Postcondición: retry_count refleja número total de intentos fallidos
+  - Acción: invocar `registrar_contacto_cita`, que incrementa retry_count de forma transaccional
+  - Postcondición: retry_count refleja el número de intentos fallidos registrados (sin_respuesta, numero_invalido, paciente_rechaza)
   - 100 iteraciones
   - Tag: **Feature: gestion-confirmacion-citas, Property 6: Conteo Reintentos**
   - _Requirements: 8.4, 8.5_
@@ -418,6 +441,29 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
 
 ---
 
+---
+
+## 📊 Trazabilidad: Métricas de Éxito (KPIs)
+
+Cada tarea contribuye a uno o más KPIs documentados en design.md:
+
+| KPI | Tareas Asociadas | Validación |
+|-----|------------------|-----------|
+| **KPI 1: Tasa Confirmación** | 2.4, 3.9, 3.10, 4.1 | Requisites 2.1, 9.1 |
+| **KPI 2: Tasa No-show** | 1.1, 3.4, 4.2 | Requisites 1.1, 9.2 |
+| **KPI 3: Intentos Promedio** | 2.8, 4.6 | Requisites 5.5, 8.5 |
+| **KPI 4: Motivos Cancelación** | 2.7, 3.10 | Requisites 4.3, 9.4 |
+| **KPI 5: Ahorro Operativo** | 3.1-3.11 | Documentación operacional |
+| **KPI 6: Precisión de Datos** | 2.9, 4.5 | Requisites 10.1, 10.3 |
+
+**Nota**: Las métricas técnicas (MT1-4 en design.md) se monitorizarán durante implementación:
+- MT1: Latencia de Queries (<500ms-1500ms)
+- MT2: Disponibilidad (99.5% uptime)
+- MT3: Consistencia de datos
+- MT4: Throughput (100+ ops/sec)
+
+---
+
 ## Task Dependency Graph
 
 ```json
@@ -433,7 +479,7 @@ Este plan de implementación describe todas las tareas necesarias para desarroll
     },
     {
       "id": 2,
-      "tasks": ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8"]
+      "tasks": ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8", "2.9"]
     },
     {
       "id": 3,
