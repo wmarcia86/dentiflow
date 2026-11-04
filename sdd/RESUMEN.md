@@ -2,7 +2,10 @@
 
 ## ✅ COMPLETADO EXITOSAMENTE
 
-Has implementado exitosamente el **Spec Driven Development (SDD)** para el sistema **DentiFlow** con el feature principal: **"Gestión de Continuidad de Tratamientos Odontológicos"**
+Has implementado exitosamente el **Spec Driven Development (SDD)** para **DentiFlow** con **2 features principales**:
+
+1. **SPEC-001**: Gestión de Continuidad de Tratamientos Odontológicos ✅
+2. **SPEC-002**: Gestión de Confirmación de Citas Odontológicas ✅
 
 ---
 
@@ -13,65 +16,79 @@ c:\Users\WMARCIA\source\repos\dentiflow\sdd\
 ├── .kiro/
 │   ├── steering/
 │   │   └── ✅ dentiflow-context.md
-│   │       (Contexto persistente del proyecto)
-│   │       - Convenciones de BD en español
-│   │       - Stack tecnológico definido
-│   │       - Restricciones y alcance claros
-│   │       - Zona horaria: America/Managua
+│   │       (Contexto persistente: stack, convenciones, zona horaria)
 │   │
 │   ├── skills/
 │   │   └── ✅ dental-brand-design.md
-│   │       (Guía de diseño de marca)
-│   │       - Paleta de colores (azul + turquesa)
-│   │       - Tipografía (Inter)
-│   │       - Componentes UI con ejemplos
-│   │       - Estados visuales de tratamientos
-│   │       - Principios de accesibilidad
+│   │       (Paleta colores, tipografía, componentes UI)
 │   │
 │   └── specs/
-│       └── gestion-continuidad-tratamientos/
-│           ├── ✅ .config.kiro
-│           ├── ✅ requirements.md
-│           │   - 10 requirements principales
-│           │   - 50 criterios de aceptación (EARS format)
-│           │   - Glosario completo
-│           │   - Assumptions & dependencies
-│           │   - Scope claramente definido
-│           │
-│           ├── ✅ design.md
-│           │   - Arquitectura del sistema
-│           │   - Modelo de datos (5 tablas)
-│           │   - SQL: triggers, constraints, RLS policies
-│           │   - Queries principales
-│           │   - Componentes React
-│           │   - Flujos de usuario
-│           │   - Propiedades de correctness
-│           │
-│           └── ✅ tasks.md
-│               - 23 tareas en 5 waves
-│               - Dependency graph en JSON
-│               - Estimación: 50 horas
-│               - Criterios de éxito
+│       ├── gestion-continuidad-tratamientos/
+│       │   ├── ✅ requirements.md (35 KB, 10 reqs + 50 AC)
+│       │   ├── ✅ design.md (25 KB, 5 tablas, SQL, RLS)
+│       │   ├── ✅ tasks.md (8 KB, 23 tareas, 50h)
+│       │   └── ✅ .config.kiro
+│       │
+│       └── gestion-confirmacion-citas/
+│           ├── ✅ requirements.md (18 KB, 10 reqs + 50+ AC)
+│           ├── ✅ design.md (20 KB, 1 tabla nueva, extensiones)
+│           ├── ✅ tasks.md (15 KB, 38 tareas, 38h)
+│           └── ✅ .config.kiro
+│
+├── ✅ RESUMEN.md (Este archivo)
+├── ✅ INDICE.md (Índice completo)
+└── ✅ ARQUITECTURA.md (Diagramas visuales)
 \\\
 
 ---
 
-## 🎯 Feature Principal
+## 🎯 Features Principales
 
-### "Gestión de Continuidad de Tratamientos Odontológicos"
+### SPEC-001: Gestión de Continuidad de Tratamientos Odontológicos
 
 **Problema que Resuelve:**
-- ❌ Pacientes abandonan tratamientos multi-sesión (endodoncia, ortodoncia) cuando mejoran temporalmente
+- ❌ 30% de pacientes abandonan tratamientos multi-sesión (endodoncia, ortodoncia, periodoncia)
+- ❌ Sin seguimiento, pacientes no retornan cuando mejoran temporalmente
+- ❌ Consultorio pierde ingresos y pacientes
 
 **Solución Implementada:**
 - ✅ CRUD de pacientes, citas, tratamientos, sesiones
+- ✅ Tabla sesiones_tratamientos con progreso automático
 - ✅ Detección automática de tratamientos pendientes de seguimiento
 - ✅ Panel de alertas para tratamientos en riesgo
-- ✅ Registro de intentos de contacto y seguimientos
+- ✅ Registro de intentos de contacto (seguimientos)
+- ✅ Máquina de estados (pendiente → en curso → finalizado → etc.)
 
 **Usuarios:**
-- **Asistente**: Gestiona todo el flujo (CRUD + seguimiento)
+- **Asistente**: Gestiona todo (CRUD + seguimiento)
 - **Doctora**: Solo lectura (reportes)
+
+**Estimación**: 50 horas, 23 tareas, 5 waves (~2 semanas)
+
+---
+
+### SPEC-002: Gestión de Confirmación de Citas Odontológicas
+
+**Problema que Resuelve:**
+- ❌ Altos índices de inasistencia a citas programadas
+- ❌ Sin confirmación previa, pacientes olvidan o no llegan
+- ❌ Consultorio pierde tiempo y dinero en citas no cubiertas
+
+**Solución Implementada:**
+- ✅ Gestión de confirmación de citas (manual)
+- ✅ Cancelaciones y reprogramaciones
+- ✅ Historial completo de gestiones
+- ✅ Auditoría de intentos de contacto
+- ✅ Estados: pendiente confirmación → confirmada → cancelada → etc.
+- ✅ Tabla gestiones_citas para rastrear cada gestión
+
+**Usuarios:**
+- **Asistente**: Gestiona confirmaciones
+- **Doctora**: Solo lectura
+
+**Dependencia**: Requiere SPEC-001 completada (pacientes, citas, tratamientos)
+
+**Estimación**: 38 horas, 38 tareas, 6 waves (~2 semanas)
 
 ---
 
@@ -85,11 +102,10 @@ Contexto persistente aplicable a TODOS los agentes trabajando en DentiFlow.
 - ✅ Convenciones: snake_case, nombres en español, UUID para IDs
 - ✅ Seguridad: Supabase Auth + RLS
 - ✅ Zona Horaria: America/Managua
-- ✅ Tabla usuarios con roles
-- ✅ Restricciones: NO expedientes clínicos, NO diagnósticos, NO prescripciones
+- ✅ Restricciones: NO expedientes clínicos, NO diagnósticos
 - ✅ Prioridades: Fase 1 (MVP), Fase 2 (WhatsApp), Fase 3 (Reportes)
 
-**Tamaño**: ~9 KB
+**Tamaño**: 9 KB | **Uso**: Referencia constante
 
 ---
 
@@ -97,98 +113,22 @@ Contexto persistente aplicable a TODOS los agentes trabajando en DentiFlow.
 Guía de marca y diseño visual para asegurar consistencia UI/UX.
 
 **Incluye:**
-- ✅ Paleta de colores (6 tonos de azul, 6 de turquesa, 4 neutrales)
-- ✅ Tipografía: Inter font con escala específica
+- ✅ Paleta: 6 azules, 6 turquesas, 4 neutrales
+- ✅ Tipografía: Inter font
 - ✅ Componentes: Cards, Botones, Badges, Modales
 - ✅ Estados: Confirmado (verde), Pendiente (amarillo), Cancelado (rojo)
-- ✅ Iconografía: Heroicons recomendados
-- ✅ Layout: Estructura de navegación (Header + Sidebar)
-- ✅ Responsiveness: Mobile-first approach
-- ✅ Patrones: Loaders, Feedback, Confirmaciones
-- ✅ Ejemplos: Cards reales, Alertas, Dashboard
+- ✅ Iconografía: Heroicons
+- ✅ Layout: Header + Sidebar
+- ✅ Responsiveness: Mobile-first
+- ✅ Ejemplos: React/Tailwind reales
 
-**Tamaño**: ~12 KB
-
----
-
-### 3. **requirements.md** (Requirements Document)
-Especificación completa de necesidades del feature.
-
-**Estructura:**
-- ✅ **Introduction**: Contexto y usuarios
-- ✅ **Glossary**: 11 términos definidos
-- ✅ **Requirements**: 10 requisitos con user stories
-  - Req 1-6: Funcionalidad principal (pacientes, citas, tratamientos, sesiones, alertas, seguimientos)
-  - Req 7-10: Seguridad, integridad, RLS, actualización de estados
-- ✅ **Acceptance Criteria**: 50 criterios verificables (formato EARS)
-- ✅ **Assumptions & Dependencies**: 6 prerequisitos aclarados
-  - Auth pre-configurada
-  - 2 usuarios de prueba
-  - tabla usuarios existente
-  - RLS policies activas
-  - Rutas protegidas
-  - Gestión de sesiones
-- ✅ **Out of Scope**: Claramente definido
-
-**Validación**: ✅ Formato aprobado, sin errores
-
-**Tamaño**: ~35 KB
+**Tamaño**: 12 KB | **Uso**: Para UI/UX developers
 
 ---
 
-### 4. **design.md** (Design Document)
-Arquitectura técnica, modelo de datos, y componentes.
+## 🏗️ Modelo de Datos (Completo)
 
-**Secciones:**
-- ✅ **Overview**: Visión general
-- ✅ **Architecture**: Stack y flujo de datos
-- ✅ **Data Models**: 5 tablas SQL completas
-  - pacientes (nombre, teléfono, whatsapp, estado)
-  - citas (fecha, hora, estado, FK paciente)
-  - tratamientos (tipo, sesiones, estado, FK paciente)
-  - sesiones_tratamientos (numero, fecha, estado, FK tratamiento/cita)
-  - seguimientos_pacientes (medio, resultado, observaciones, FKs)
-- ✅ **Constraints**: CHECK, UNIQUE, NOT NULL
-- ✅ **Triggers**: update_updated_at_column() automático
-- ✅ **RLS Policies**: Asistente (all), Doctora (select), Anónimos (none)
-- ✅ **Queries**: Detección de tratamientos pendientes (SQL + TypeScript)
-- ✅ **Components**: Panel de Alertas (React ejemplo real)
-- ✅ **User Flows**: Diagrama Mermaid del flujo completo
-- ✅ **Correctness Properties**: Integridad de datos, RLS, transiciones
-- ✅ **Error Handling**: Validación, BD, lógica de negocio
-- ✅ **Testing Strategy**: Unitarios, Integración, E2E
-
-**Validación**: ✅ Formato aprobado, sin errores críticos
-
-**Tamaño**: ~25 KB
-
----
-
-### 5. **tasks.md** (Implementation Plan)
-Plan de ejecución con 23 tareas en 5 waves.
-
-**Waves:**
-
-| Wave | Tareas | Horas | Descripción |
-|------|--------|-------|-------------|
-| 1 | 7 | 8 | Database: Crear 5 tablas + triggers + RLS |
-| 2 | 6 | 12 | API: CRUD + queries críticas |
-| 3 | 6 | 20 | Frontend: 6 páginas principales |
-| 4 | 3 | 8 | Testing: Unit + Integration + E2E |
-| 5 | 1 | 2 | Documentation: Guía de usuario |
-| **TOTAL** | **23** | **50h** | **~2 semanas** |
-
-**JSON Dependency Graph**: ✅ Incluido con waves y duraciones
-
-**Validación**: ✅ Formato aprobado, sin errores
-
-**Tamaño**: ~8 KB
-
----
-
-## 🏗️ Modelo de Datos (Resumen)
-
-### Entidades
+### SPEC-001 - Tablas Principales
 
 | Tabla | Campos | Relaciones | Estados |
 |-------|--------|-----------|---------|
@@ -198,12 +138,14 @@ Plan de ejecución con 23 tareas en 5 waves.
 | **sesiones_tratamientos** | 8 | FK tratamientos, citas | 4 estados |
 | **seguimientos_pacientes** | 9 | FK pacientes, tratamientos | 3 estados |
 
-### Validaciones
-- ✅ Teléfono: 8-15 dígitos
-- ✅ Sesiones: 1-100 planeadas
-- ✅ Progreso: completadas ≤ planeadas
-- ✅ Fechas: fin > inicio
-- ✅ RLS: Asistente (read/write), Doctora (read-only)
+### SPEC-002 - Tabla Nueva
+
+| Tabla | Campos | Relaciones | Estados |
+|-------|--------|-----------|---------|
+| **gestiones_citas** | 10 | FK citas, pacientes | confirmada/cancelada/reprogramada |
+
+**Extensión a SPEC-001:**
+- citas: + campos necesita_confirmacion, confirmacion_estado, fecha_confirmacion
 
 ---
 
@@ -216,148 +158,124 @@ Plan de ejecución con 23 tareas en 5 waves.
 - **Advertencia**: Amarillo #F59E0B
 - **Error**: Rojo #EF4444
 
-### Componentes
-- Header: Logo + Usuario
-- Sidebar: 6 secciones (Pacientes, Citas, Tratamientos, Sesiones, Alertas, Seguimientos)
-- Tables: Listas con búsqueda
-- Forms: Validación en tiempo real
-- Badges: Estados de colores
-- Progress Bars: Progreso visual de tratamientos
+### Páginas Principales (SPEC-001)
+1. **Pacientes**: CRUD con búsqueda
+2. **Citas**: Listado y gestión
+3. **Tratamientos**: Multi-sesión con progreso
+4. **Sesiones**: Marcar completadas, ver progreso
+5. **Alertas**: Panel de tratamientos en riesgo
+6. **Seguimientos**: Registro de intentos de contacto
 
-### Flujo Principal
-Registrar Paciente → Crear Tratamiento (N sesiones) → Completar Sesiones → Auto-detección Alerta → Registrar Seguimiento
+### Páginas Adicionales (SPEC-002)
+1. **Confirmaciones**: Gestionar confirmación de citas
+2. **Historial Gestiones**: Ver todas las gestiones realizadas
 
 ---
 
 ## 🧪 Criterios de Aceptación Principales
 
-### CA1: Registro de Tratamiento Multi-Sesión
-`gherkin
-CUANDO la asistente registra un tratamiento con 3 sesiones planificadas
-ENTONCES se crea con estado='pendiente_iniciar' y sesiones_completadas=0
+### CA1: Registro de Tratamiento Multi-Sesión (SPEC-001)
+`
+CUANDO: asistente registra tratamiento con 3 sesiones
+ENTONCES: se crea con estado='pendiente_iniciar', sesiones_completadas=0
 `
 
-### CA2: Control Automático de Progreso
-`gherkin
-CUANDO marca la sesión #2 como completada
-ENTONCES sesiones_completadas incrementa a 2
-Y fecha_ultima_sesion se actualiza automáticamente
+### CA2: Control Automático de Progreso (SPEC-001)
+`
+CUANDO: marca sesión #2 como completada
+ENTONCES: sesiones_completadas incrementa, fecha_ultima_sesion se actualiza
 `
 
-### CA3: Detección Automática de Alertas
-`gherkin
-CUANDO sesiones_completadas < total_sesiones
-Y NO existe cita futura programada
-ENTONCES estado='pendiente_seguimiento' y alerta visible
+### CA3: Detección Automática de Alertas (SPEC-001)
+`
+CUANDO: sesiones_completadas < total Y NO existe cita futura
+ENTONCES: estado='pendiente_seguimiento' Y alerta visible
 `
 
-### CA4: Registro de Seguimiento
-`gherkin
-CUANDO registra intento de contacto por WhatsApp
-ENTONCES se guarda fecha, resultado (contacto_exitoso, etc.)
+### CA4: Gestión de Confirmación (SPEC-002)
+`
+CUANDO: registra confirmación de cita por teléfono
+ENTONCES: se guarda fecha, medio, resultado
 `
 
-### CA5: Finalización Automática
-`gherkin
-CUANDO completa la última sesión
-ENTONCES estado='finalizado' y fecha_finalizacion se establece
+### CA5: Cancelación y Reprogramación (SPEC-002)
+`
+CUANDO: cancela cita
+ENTONCES: se crea registro en gestiones_citas con motivo
 `
 
 ---
 
 ## 🚀 Próximos Pasos
 
-### Fase 1: Implementación (50 horas)
-1. ✅ Crear tablas BD (Wave 1: 8h)
-2. ✅ Implementar APIs (Wave 2: 12h)
-3. ✅ Construir UI (Wave 3: 20h)
-4. ✅ Testing completo (Wave 4: 8h)
-5. ✅ Documentación (Wave 5: 2h)
+### Fase 1: Implementación (88 horas totales)
+
+**SPEC-001 (50 horas):**
+1. ✅ Wave 1: Base de Datos (8h, 7 tareas)
+   - Crear 5 tablas
+   - Constraints, triggers, RLS
+2. ✅ Wave 2: Backend API (12h, 6 tareas)
+   - CRUD endpoints
+   - Queries críticas
+3. ✅ Wave 3: Frontend (20h, 6 tareas)
+   - 6 páginas principales
+   - Componentes reutilizables
+4. ✅ Wave 4: Testing (8h, 3 tareas)
+   - Unit, Integration, E2E
+5. ✅ Wave 5: Documentación (2h, 1 tarea)
+   - Guía de usuario
+
+**SPEC-002 (38 horas, después de SPEC-001):**
+1. ✅ Wave 0: Setup (2h, 2 tareas)
+2. ✅ Wave 1: Base de Datos (4h, 5 tareas)
+3. ✅ Wave 2: Backend API (8h, 7 tareas)
+4. ✅ Wave 3: Frontend (16h, 11 tareas)
+5. ✅ Wave 4: Property Tests (6h, 6 tareas)
+6. ✅ Wave 5: Documentación (2h, 7 tareas)
 
 ### Fase 2: Integración Google Calendar (Futura)
-- Sincronización bidireccional de citas
-- Detección de cambios automáticos
+- Sincronización bidireccional
 
 ### Fase 3: Automatización WhatsApp (Futura)
-- Recordatorios automáticos 48h, 24h antes
-- Confirmaciones de asistencia por WhatsApp
-- Seguimientos automáticos
+- Recordatorios automáticos
+- Confirmaciones por WhatsApp
 
 ---
 
-## 📊 Estadísticas de la Spec
+## 📊 Estadísticas Finales
 
 | Métrica | Valor |
 |---------|-------|
-| Total de Archivos | 6 |
-| Tamaño Total | ~92 KB |
-| Requirements | 10 |
-| Acceptance Criteria | 50 |
-| Tablas de Base de Datos | 5 |
-| Componentes React | 6 |
-| Tareas de Implementación | 23 |
-| Horas Estimadas | 50 |
-| Validación de Formato | ✅ 100% |
-
----
-
-## 🎓 Lo Que Aprendiste en esta Tarea
-
-### 1. Spec Driven Development (SDD)
-- ✅ Contexto persistente (steering files)
-- ✅ Skills reutilizables (design guidelines)
-- ✅ Requirements separados del Design
-- ✅ Plan de implementación basado en spec
-
-### 2. Best Practices
-- ✅ Convenciones consistentes (español, snake_case)
-- ✅ Validación de formato automática
-- ✅ Criterios de aceptación EARS
-- ✅ Dependency graphs para priorización
-
-### 3. Tecnologías
-- ✅ Supabase: Auth + DB + RLS
-- ✅ PostgreSQL: Constraints, Triggers, Policies
-- ✅ React/TypeScript: Componentes reutilizables
-- ✅ Tailwind: Diseño responsive
-
----
-
-## 🎯 Conclusión
-
-Has creado un **Spec Driven Development completo y validado** para DentiFlow que:
-
-✅ Define claramente el problema de negocio (abandono de tratamientos)  
-✅ Especifica 10 requisitos con 50 criterios de aceptación verificables  
-✅ Diseña una arquitectura escalable con 5 tablas bien relacionadas  
-✅ Proporciona un plan de implementación de 50 horas en 5 waves  
-✅ Incluye contexto persistente (steering) y guía de marca (skill)  
-✅ Mantiene consistencia en español, convenciones y seguridad  
-✅ Pasa validación automática de formato
-
-**El siguiente paso:** Delegar la implementación a subagentes especializados usando este spec como referencia.
+| **Specs completadas** | 2 |
+| **Archivos de spec** | 10 |
+| **Tamaño total** | ~165 KB |
+| **Requirements** | 20 (10 + 10) |
+| **Acceptance Criteria** | 100+ (50 + 50+) |
+| **Tablas de Base de Datos** | 6 (5 + 1 nueva) |
+| **Componentes React** | 12+ |
+| **Tareas de Implementación** | 61 (23 + 38) |
+| **Horas Estimadas** | 88 (50 + 38) |
+| **Duración Total del Proyecto** | ~4 semanas |
+| **Validación de Formato** | ✅ 100% |
 
 ---
 
 ## 📞 Preguntas Frecuentes
 
-**¿Por qué no implementamos autenticación?**  
-Porque es un prerequisito (infraestructura) separable de la funcionalidad del feature. Las asunciones del spec permiten asumir que ya existe.
+**¿Por qué SPEC-001 antes de SPEC-002?**  
+Porque SPEC-002 depende de las tablas de SPEC-001. Es el orden lógico.
 
-**¿Cuál es el feature más importante?**  
-Gestión de Continuidad de Tratamientos (este). Resuelve directamente el problema de abandono del 30% de pacientes.
+**¿Cuánto tiempo total?**  
+88 horas estimadas (4 semanas con equipo de 4 personas).
 
-**¿Cuánto tiempo tarda implementar?**  
-50 horas estimadas (2 semanas con equipo de 4 personas).
+**¿Se pueden hacer ambas en paralelo?**  
+Solo parcialmente. SPEC-002 necesita al menos Wave 1 de SPEC-001 completada.
 
-**¿Se puede hacer más pequeño?**  
-Sí, simplificando para MVP solo hasta Wave 3 (40 horas), posponiendo testing avanzado.
+**¿Qué pasa después?**  
+Fase 2 (Google Calendar) y Fase 3 (WhatsApp automation).
 
 ---
 
 **Creado con Spec Driven Development usando Kiro**  
-**Fecha**: 03/11/2026 23:31  
-**Proyecto**: DentiFlow - Sistema de Gestión Dental  
-**Feature**: Gestión de Continuidad de Tratamientos Odontológicos  
-**Status**: ✅ ESPECIFICACIÓN COMPLETADA Y VALIDADA
-
+**Status**: ✅ LISTO PARA ENTREGAR  
+**Próximo paso**: Comienza implementación de SPEC-001 Wave 1
